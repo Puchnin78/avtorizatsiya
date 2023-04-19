@@ -1,0 +1,96 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <locale>
+using namespace std;
+
+int main()
+{
+    setlocale(LC_ALL, "rus");
+    string login;
+    string password;
+    string prevPassword;
+    string newPassword;
+    bool found = false;
+
+    // Запрашиваем логин у пользователя
+    cout << "Введите пожалуйста логин: ";
+    cin >> login;
+
+    // Проверяем, есть ли введенный логин в файле
+    ifstream file;
+    file.open("login_password.txt");
+    string line;
+    while (getline(file, line)) {
+        if (line.find(login) != string::npos) {
+            found = true;
+            break;
+        }
+    }
+    file.close();
+
+    // Если логин найден в файле, запрашиваем пароль
+    if (found) {
+        cout << "Такой логин уже есть\n";
+        cout << "Хотите изменить свой пароль? [Y/N]: ";
+        char answer;
+        cin >> answer;
+        if (answer == 'Y') {
+            cout << "Введите свой последний пароль: ";
+            cin >> prevPassword;
+
+            // Проверяем, правильный ли пароль ввел пользователь
+            file.open("login_password.txt");
+            while (getline(file, line)) {
+                if (line.find(prevPassword) != string::npos) {
+                    break;
+                }
+            }
+            file.close();
+
+            // Если пароль правильный, запрашиваем новый пароль
+            if (line.find(prevPassword) != string::npos) {
+                do {
+                    cout << "Введите новый пароль: ";
+                    cin >> newPassword;
+                } while (newPassword.length() < 4 || newPassword.length() > 11);
+
+                // Проверяем, подходит ли пароль по условию и заменяем предыдущий пароль новым
+                string oldText, newText;
+                oldText = "Password: " + prevPassword;
+                newText = "Password: " + newPassword;
+                ifstream fin("login_password.txt");
+                ofstream fout("temp.txt");
+                while (getline(fin, line)) {
+                    if (line.find(oldText) != string::npos) {
+                        line.replace(line.find(oldText), oldText.length(), newText);
+                    }
+                    fout << line << endl;
+                }
+                fin.close();
+                fout.close();
+                remove("login_password.txt");
+                rename("temp.txt", "login_password.txt");
+            }
+            else {
+                cout << "Неправильный пароль.\n";
+            }
+        }
+    }
+    else {
+        // Запрашиваем пароль у пользователя
+        do {
+            cout << "Введите пароль: ";
+            cin >> password;
+        } while (password.length() < 4 || password.length() > 11);
+
+        // Проверяем, подходит ли пароль по условию и записываем логин и пароль в файл
+        ofstream file;
+        file.open("login_password.txt", ios::app);
+        file << "Login: " << login << endl;
+        file << "Password: " << password << endl;
+        file.close();
+    }
+
+    return 0;
+}
